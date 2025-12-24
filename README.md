@@ -258,36 +258,3 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 Made with ❤️ and Flutter
 
 </div>
-
-## 🗄️ Firestore Structure
-
-```
-/users/{uid}
-  - displayName: string
-  - avatarUrl: string (optional)
-  - createdAt: timestamp
-
-/workspaces/{workspaceId}
-  - name: string
-  - createdBy: string (uid)
-  - createdAt: timestamp
-  
-  /members/{uid}
-    - role: "owner" | "member"
-    - joinedAt: timestamp
-    
-  /invites/{token}
-    - createdBy: string (uid)
-    - createdAt: timestamp
-    - expiresAt: timestamp
-    - maxUses: number (optional)
-    - usesCount: number
-```
-
-## 🔐 Security Rules Summary
-
-- Users can only read/write their own `/users/{uid}` document
-- Only workspace members can read workspace data
-- Only owners can update/delete workspaces
-- Invite tokens can be read by anyone (for validation) but only incremented once per join
-- Collection group query on `members` allowed for finding user's workspaces
