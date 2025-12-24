@@ -1,0 +1,224 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // Helper Functions
+    // ============================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Get current user ID
+    function userId() {
+      return request.auth.uid;
+    }
+    
+    // Check if the user is a member of the workspace
+    function isMember(workspaceId) {
+      return exists(/databases/$(database)/documents/workspaces/$(workspaceId)/members/$(userId()));
+    }
+    
+    // Check if the user is the owner of the workspace
+    function isOwner(workspaceId) {
+      let membership = get(/databases/$(database)/documents/workspaces/$(workspaceId)/members/$(userId()));
+      return membership != null && membership.data.role == 'owner';
+    }
+    
+    // ============================================
+    // Users Collection: /users/{uid}
+    // ============================================
+    match /users/{uid} {
+      // Users can read their own document
+      allow read: if isAuthenticated() && userId() == uid;
+      
+      // Users can create their own document
+      allow create: if isAuthenticated() && userId() == uid
+                    && request.resource.data.keys().hasAll(['displayName', 'createdAt'])
+                    && request.resource.data.displayName is string
+                    && request.resource.data.displayName.size() >= 2
+                    && request.resource.data.displayName.size() <= 30;
+      
+      // Users can update their own document
+      allow update: if isAuthenticated() && userId() == uid
+                    && request.resource.data.displayName is string
+                    && request.resource.data.displayName.size() >= 2
+                    && request.resource.data.displayName.size() <= 30;
+      
+      // Users cannot delete their document (for now)
+      allow delete: if false;
+      
+      // ============================================
+      // FCM Tokens Subcollection: /users/{uid}/tokens/{tokenId}
+      // ============================================
+      match /tokens/{tokenId} {
+        // Users can read their own tokens
+        allow read: if isAuthenticated() && userId() == uid;
+        
+        // Users can create/update their own tokens
+        allow create, update: if isAuthenticated() && userId() == uid;
+        
+        // Users can delete their own tokens
+        allow delete: if isAuthenticated() && userId() == uid;
+      }
+    }
+    
+    // ============================================
+    // Workspaces Collection: /workspaces/{workspaceId}
+    // ============================================
+    match /workspaces/{workspaceId} {
+      // Members can read workspace
+      allow read: if isAuthenticated() && isMember(workspaceId);
+      
+      // Authenticated users can create workspace (they become owner)
+      allow create: if isAuthenticated()
+                    && request.resource.data.keys().hasAll(['name', 'createdBy', 'createdAt'])
+                    && request.resource.data.createdBy == userId()
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() >= 2
+                    && request.resource.data.name.size() <= 50;
+      
+      // Only owner can update workspace
+      allow update: if isAuthenticated() && isOwner(workspaceId)
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() >= 2
+                    && request.resource.data.name.size() <= 50;
+      
+      // Only owner can delete workspace
+      allow delete: if isAuthenticated() && isOwner(workspaceId);
+      
+      // ============================================
+      // Members Subcollection: /workspaces/{workspaceId}/members/{uid}
+      // ============================================
+      match /members/{memberId} {
+        // Members can read other members
+        allow read: if isAuthenticated() && isMember(workspaceId);
+        
+        // First member (owner) can be created by the workspace creator
+        // Subsequent members created via invite validation
+        allow create: if isAuthenticated()
+                      && (
+                        // Workspace creator adds themselves as owner
+                        (memberId == userId() && request.resource.data.role == 'owner')
+                        ||
+                        // New member joins (must be the joining user)
+                        (memberId == userId() && request.resource.data.role == 'member')
+                      )
+                      && request.resource.data.keys().hasAll(['userId', 'role', 'joinedAt'])
+                      && request.resource.data.userId == userId();
+        
+        // Only owner can update member roles
+        allow update: if isAuthenticated() && isOwner(workspaceId)
+                      && memberId != userId(); // Can't change own role
+        
+        // Owner can remove members, members can remove themselves
+        allow delete: if isAuthenticated() 
+                      && (isOwner(workspaceId) || memberId == userId());
+      }
+      
+      // ============================================
+      // Invites Subcollection: /workspaces/{workspaceId}/invites/{token}
+      // ============================================
+      match /invites/{token} {
+        // Members can read invites (to share)
+        allow read: if isAuthenticated() && isMember(workspaceId);
+        
+        // For join flow: allow anyone authenticated to read invite for validation
+        // This is necessary because user is not yet a member when validating
+        allow get: if isAuthenticated();
+        
+        // Members can create invites
+        allow create: if isAuthenticated() && isMember(workspaceId)
+                      && request.resource.data.keys().hasAll(['createdBy', 'createdAt', 'expiresAt'])
+                      && request.resource.data.createdBy == userId();
+        
+        // Anyone authenticated can update usesCount (for join flow)
+        // In production, this should be done via Cloud Function
+        allow update: if isAuthenticated()
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usesCount'])
+                      && request.resource.data.usesCount == resource.data.usesCount + 1;
+        
+        // Only owner can delete invites
+        allow delete: if isAuthenticated() && isOwner(workspaceId);
+      }
+
+      // ============================================
+      // Items Subcollection: /workspaces/{workspaceId}/items/{itemId}
+      // ============================================
+      match /items/{itemId} {
+        // Members can read all items
+        allow read: if isAuthenticated() && isMember(workspaceId);
+        
+        // Members can create items
+        allow create: if isAuthenticated() && isMember(workspaceId)
+                      && request.resource.data.keys().hasAll(['type', 'title', 'state', 'createdBy', 'createdAt', 'updatedAt'])
+                      && request.resource.data.createdBy == userId()
+                      && request.resource.data.title is string
+                      && request.resource.data.title.size() >= 2
+                      && request.resource.data.title.size() <= 200;
+        
+        // Members can update items
+        allow update: if isAuthenticated() && isMember(workspaceId)
+                      && request.resource.data.title is string
+                      && request.resource.data.title.size() >= 2
+                      && request.resource.data.title.size() <= 200;
+        
+        // Members can delete items (or restrict to owner/creator only)
+        allow delete: if isAuthenticated() && isMember(workspaceId);
+      }
+
+      // ============================================
+      // Presence Subcollection: /workspaces/{workspaceId}/presence/{userId}
+      // ============================================
+      match /presence/{presenceUserId} {
+        // Members can read all presence data
+        allow read: if isAuthenticated() && isMember(workspaceId);
+        
+        // Users can only create/update their own presence
+        allow create: if isAuthenticated() && isMember(workspaceId)
+                      && presenceUserId == userId()
+                      && request.resource.data.keys().hasAll(['status', 'updatedAt']);
+        
+        // Users can only update their own presence
+        allow update: if isAuthenticated() && isMember(workspaceId)
+                      && presenceUserId == userId();
+        
+        // Users can only delete their own presence
+        allow delete: if isAuthenticated() && isMember(workspaceId)
+                      && presenceUserId == userId();
+      }
+
+      // ============================================
+      // Activities Subcollection: /workspaces/{workspaceId}/activities/{activityId}
+      // ============================================
+      match /activities/{activityId} {
+        // Members can read all activities
+        allow read: if isAuthenticated() && isMember(workspaceId);
+        
+        // Members can create activities (logged by app when item changes)
+        allow create: if isAuthenticated() && isMember(workspaceId)
+                      && request.resource.data.keys().hasAll(['action', 'itemId', 'itemTitle', 'actorUserId', 'actorName', 'createdAt'])
+                      && request.resource.data.actorUserId == userId();
+        
+        // Activities are immutable (no updates)
+        allow update: if false;
+        
+        // Only owner can delete activities (cleanup)
+        allow delete: if isAuthenticated() && isOwner(workspaceId);
+      }
+    }
+    
+    // ============================================
+    // Collection Group Query Support
+    // ============================================
+    // Allow collection group query on members for finding user's workspaces
+    // Query uses 'userId' field, not document ID
+    match /{path=**}/members/{memberId} {
+      allow read: if isAuthenticated() 
+                  && (memberId == userId() || resource.data.userId == userId());
+    }
+  }
+}
