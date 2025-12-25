@@ -243,7 +243,7 @@ class ItemNotifier extends StateNotifier<ItemState2> {
         await _activityRepo.logItemDeleted(
           workspaceId: _workspaceId,
           itemId: itemId,
-          itemTitle: itemTitle ?? 'Item',
+          itemTitle: itemTitle ?? 'Görev',
           actorUserId: _currentUserId!,
           actorName: _currentUserName,
         );
@@ -252,7 +252,7 @@ class ItemNotifier extends StateNotifier<ItemState2> {
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Item silinemedi: $e');
+      state = state.copyWith(isLoading: false, error: 'Görev silinemedi: $e');
       return false;
     }
   }
@@ -269,7 +269,7 @@ class ItemNotifier extends StateNotifier<ItemState2> {
         await _activityRepo.logStateChanged(
           workspaceId: _workspaceId,
           itemId: itemId,
-          itemTitle: itemTitle ?? 'Item',
+          itemTitle: itemTitle ?? 'Görev',
           actorUserId: _currentUserId!,
           actorName: _currentUserName,
           oldState: oldState ?? ItemState.todo,
@@ -297,7 +297,7 @@ class ItemNotifier extends StateNotifier<ItemState2> {
         await _activityRepo.logItemAssigned(
           workspaceId: _workspaceId,
           itemId: itemId,
-          itemTitle: itemTitle ?? 'Item',
+          itemTitle: itemTitle ?? 'Görev',
           actorUserId: _currentUserId!,
           actorName: _currentUserName,
           assigneeUserId: userId,
@@ -330,7 +330,7 @@ class ItemNotifier extends StateNotifier<ItemState2> {
         await _activityRepo.logTypeChanged(
           workspaceId: _workspaceId,
           itemId: itemId,
-          itemTitle: itemTitle ?? 'Item',
+          itemTitle: itemTitle ?? 'Görev',
           actorUserId: _currentUserId!,
           actorName: _currentUserName,
           oldType: oldType ?? ItemType.idea,
@@ -382,9 +382,9 @@ final itemNotifierProvider =
 // Workspace Members (for assignment dropdown)
 // ============================================
 
-/// Stream of workspace members for assignment
+/// Stream of workspace members for assignment (real-time)
 final workspaceMembersProvider =
-    FutureProvider.family<List<Membership>, String>((ref, workspaceId) async {
+    StreamProvider.family<List<Membership>, String>((ref, workspaceId) {
   final workspaceRepo = ref.watch(workspaceRepositoryProvider);
-  return workspaceRepo.getWorkspaceMembers(workspaceId);
+  return workspaceRepo.watchWorkspaceMembers(workspaceId);
 });

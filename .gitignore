@@ -55,3 +55,42 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.gr.dart
+*.mocks.dart
+lib/generated_plugin_registrant.dart
+
+# APK files (build outputs)
+*.apk
+*.aab
+
+# Keystore files (should be kept secure, not in repo)
+*.jks
+*.keystore
+key.properties
+
+# macOS
+*.dmg
+
+# Windows
+*.exe
+*.msi
+
+# Linux
+*.deb
+*.rpm
+*.snap
+
+# Web build
+/web/build/
+
+# Test related
+coverage/
+test/.test_coverage.dart
+
+# Local configuration
+local.properties
+*.local.json

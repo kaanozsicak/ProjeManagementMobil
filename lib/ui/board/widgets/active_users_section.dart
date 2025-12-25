@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/models.dart';
 import '../../../providers/providers.dart';
-import '../../../repositories/repositories.dart';
+import '../../../shared/theme/app_colors.dart';
 import '../widgets/item_card.dart';
 
 /// Active users section - shows who's working on what
@@ -59,7 +59,7 @@ class ActiveUsersSection extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${activeUsers.where((u) => u.presence != null || u.hasActiveItems).length}',
+                    '${activeUsers.length}',
                     style: const TextStyle(
                       color: Colors.blue,
                       fontWeight: FontWeight.bold,
@@ -79,10 +79,7 @@ class ActiveUsersSection extends ConsumerWidget {
             itemCount: activeUsers.length,
             itemBuilder: (context, index) {
               final userData = activeUsers[index];
-              // Only show users with presence or active items
-              if (userData.presence == null && !userData.hasActiveItems) {
-                return const SizedBox.shrink();
-              }
+              // Show all users who are members
               return _ActiveUserCard(
                 userData: userData,
                 workspaceId: workspaceId,
@@ -108,14 +105,12 @@ class _ActiveUserCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final userRepo = ref.read(userRepositoryProvider);
+    final userAsync = ref.watch(userStreamProvider(userData.userId));
+    final presence = userData.presence;
 
-    return FutureBuilder(
-      future: userRepo.getUser(userData.userId),
-      builder: (context, snapshot) {
-        final user = snapshot.data;
-        final userName = user?.displayName ?? 'Yükleniyor...';
-        final presence = userData.presence;
+    return userAsync.when(
+      data: (user) {
+        final userName = user?.displayName ?? 'Bilinmeyen Kullanıcı';
 
         return Card(
           elevation: 1,
@@ -161,16 +156,17 @@ class _ActiveUserCard extends ConsumerWidget {
                   userName,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                subtitle: presence != null
-                    ? Text(
-                        presence.hasMessage
-                            ? '${presence.status.emoji} ${presence.message}'
-                            : presence.status.displayName,
-                        style: TextStyle(
-                          color: theme.colorScheme.outline,
-                        ),
-                      )
-                    : null,
+                subtitle: Text(
+                  presence != null
+                      ? (presence.hasMessage
+                          ? presence.message!
+                          : presence.status.displayName)
+                      : 'Durum belirlenmedi',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
                 trailing: userData.hasActiveItems
                     ? Container(
                         padding: const EdgeInsets.symmetric(
@@ -215,19 +211,35 @@ class _ActiveUserCard extends ConsumerWidget {
           ),
         );
       },
+      loading: () => Card(
+        elevation: 1,
+        margin: const EdgeInsets.only(bottom: 8),
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: theme.colorScheme.surfaceContainerHigh,
+            child: const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+          title: const Text('Yükleniyor...'),
+        ),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 
   Color _getStatusColor(PresenceStatus status) {
     switch (status) {
       case PresenceStatus.idle:
-        return Colors.green;
+        return AppColors.presenceIdle;
       case PresenceStatus.active:
-        return Colors.blue;
+        return AppColors.presenceActive;
       case PresenceStatus.busy:
-        return Colors.red;
+        return AppColors.presenceBusy;
       case PresenceStatus.away:
-        return Colors.amber;
+        return AppColors.presenceAway;
     }
   }
 }

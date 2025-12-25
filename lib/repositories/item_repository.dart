@@ -201,24 +201,24 @@ class ItemRepository {
     return getItemsByState(workspaceId, ItemState.done);
   }
 
-  /// Stream completed items
+  /// Stream completed items (client-side filtering for reliability)
   Stream<List<Item>> watchCompletedItems(String workspaceId) {
     return _itemsCollection(workspaceId)
-        .where('state', isEqualTo: ItemState.done.value)
-        .orderBy('updatedAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Item.fromFirestore(doc, workspaceId))
-            .toList());
+            .where((item) => item.state == ItemState.done)
+            .toList()
+          ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt)));
   }
 
-  /// Get non-completed items for board view
+  /// Get non-completed items for board view (client-side filtering for reliability)
   Stream<List<Item>> watchBoardItems(String workspaceId) {
     return _itemsCollection(workspaceId)
-        .where('state', isNotEqualTo: ItemState.done.value)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Item.fromFirestore(doc, workspaceId))
+            .where((item) => item.state != ItemState.done)
             .toList());
   }
 }

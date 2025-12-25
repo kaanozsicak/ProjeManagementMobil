@@ -32,9 +32,9 @@ enum PresenceStatus {
   String get emoji {
     switch (this) {
       case PresenceStatus.idle:
-        return '🟢';
+        return '⚪';
       case PresenceStatus.active:
-        return '🔵';
+        return '🟢';
       case PresenceStatus.busy:
         return '🔴';
       case PresenceStatus.away:
@@ -46,13 +46,13 @@ enum PresenceStatus {
   int get colorValue {
     switch (this) {
       case PresenceStatus.idle:
-        return 0xFF4CAF50; // Green
+        return 0xFF9E9E9E; // Gray
       case PresenceStatus.active:
-        return 0xFF2196F3; // Blue
+        return 0xFF4CAF50; // Green
       case PresenceStatus.busy:
         return 0xFFF44336; // Red
       case PresenceStatus.away:
-        return 0xFFFFC107; // Amber
+        return 0xFFFFB300; // Amber/Yellow
     }
   }
 
@@ -122,20 +122,20 @@ class Presence {
   /// Check if user has a custom message
   bool get hasMessage => message != null && message!.isNotEmpty;
 
-  /// Get display text (emoji + status + message)
+  /// Get display text (status + message)
   String get displayText {
     if (hasMessage) {
-      return '${status.emoji} ${status.displayName} - $message';
+      return '${status.displayName} - $message';
     }
-    return '${status.emoji} ${status.displayName}';
+    return status.displayName;
   }
 
-  /// Get short display (just emoji + message or status)
+  /// Get short display (just message or status)
   String get shortDisplay {
     if (hasMessage) {
-      return '${status.emoji} $message';
+      return message!;
     }
-    return '${status.emoji} ${status.displayName}';
+    return status.displayName;
   }
 
   @override

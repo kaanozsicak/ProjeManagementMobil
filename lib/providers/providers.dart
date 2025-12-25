@@ -4,3 +4,4 @@ export 'item_providers.dart';
 export 'presence_providers.dart';
 export 'activity_providers.dart';
 export 'notification_providers.dart';
+export 'theme_provider.dart';

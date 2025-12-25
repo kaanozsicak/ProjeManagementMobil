@@ -40,12 +40,20 @@ final userPresenceProvider =
 });
 
 /// Current user's presence in a workspace
+/// Combines stream data with notifier's local state for immediate updates
 final myPresenceProvider =
     Provider.family<Presence?, String>((ref, workspaceId) {
   final authService = ref.watch(authServiceProvider);
   final userId = authService.currentUserId;
   if (userId == null) return null;
 
+  // First check notifier's local state (for immediate updates after user action)
+  final notifierState = ref.watch(presenceNotifierProvider(workspaceId));
+  if (notifierState.currentPresence != null) {
+    return notifierState.currentPresence;
+  }
+
+  // Fallback to stream data (for other users' changes or initial load)
   final presenceMap = ref.watch(presenceMapProvider(workspaceId));
   return presenceMap[userId];
 });
@@ -215,6 +223,39 @@ class PresenceNotifier extends StateNotifier<PresenceState> {
       status: PresenceStatus.away,
       message: reason,
     );
+  }
+
+  /// Ensure presence record exists without overriding current status
+  Future<void> ensurePresenceExists() async {
+    if (_currentUserId == null) return;
+    
+    // Check if presence already exists in state
+    if (state.currentPresence != null) return;
+    
+    // Try to load from Firestore
+    try {
+      final existingPresence = await _presenceRepo.getPresence(
+        _workspaceId,
+        _currentUserId!,
+      );
+      
+      if (existingPresence != null) {
+        // Presence exists, just update state
+        state = state.copyWith(currentPresence: existingPresence);
+      } else {
+        // No presence exists, create with idle status
+        await updatePresence(
+          status: PresenceStatus.idle,
+          message: null,
+        );
+      }
+    } catch (e) {
+      // If error, try to create new presence
+      await updatePresence(
+        status: PresenceStatus.idle,
+        message: null,
+      );
+    }
   }
 
   void clearError() {

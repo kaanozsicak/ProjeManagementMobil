@@ -32,8 +32,9 @@ service cloud.firestore {
     // Users Collection: /users/{uid}
     // ============================================
     match /users/{uid} {
-      // Users can read their own document
-      allow read: if isAuthenticated() && userId() == uid;
+      // Any authenticated user can read basic user info (for team collaboration)
+      // This allows seeing teammate names in workspaces
+      allow read: if isAuthenticated();
       
       // Users can create their own document
       allow create: if isAuthenticated() && userId() == uid

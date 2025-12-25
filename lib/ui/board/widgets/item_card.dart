@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/models.dart';
 import '../../../providers/providers.dart';
 import '../../../repositories/repositories.dart';
+import '../../../shared/theme/app_colors.dart';
 import 'item_detail_dialog.dart';
 
 /// A card widget for displaying an item
@@ -146,11 +147,11 @@ class _StateIndicator extends StatelessWidget {
   Color _getColor() {
     switch (state) {
       case ItemState.todo:
-        return Colors.grey;
+        return AppColors.stateTodo;
       case ItemState.doing:
-        return Colors.blue;
+        return AppColors.stateDoing;
       case ItemState.done:
-        return Colors.green;
+        return AppColors.stateDone;
     }
   }
 }

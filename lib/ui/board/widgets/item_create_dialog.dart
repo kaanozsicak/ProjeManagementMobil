@@ -84,7 +84,7 @@ class _ItemCreateDialogState extends ConsumerState<ItemCreateDialog> {
         children: [
           Icon(Icons.add_task),
           SizedBox(width: 8),
-          Text('Yeni Item'),
+          Text('Yeni Görev'),
         ],
       ),
       content: SingleChildScrollView(

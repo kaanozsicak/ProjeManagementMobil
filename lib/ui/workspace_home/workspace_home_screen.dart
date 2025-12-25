@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../repositories/repositories.dart';
+import '../../shared/theme/app_colors.dart';
+import '../../shared/widgets/widgets.dart';
 
 /// Placeholder home screen for a workspace (Phase 2: Board)
 class WorkspaceHomeScreen extends ConsumerStatefulWidget {
@@ -165,6 +167,12 @@ class _WorkspaceHomeScreenState extends ConsumerState<WorkspaceHomeScreen> {
           onPressed: () => context.go('/workspaces'),
         ),
         actions: [
+          // Presence status indicator
+          PresenceIndicatorWidget(
+            workspaceId: widget.workspaceId,
+            showLabel: true,
+          ),
+          const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.person_add),
             tooltip: 'Davet Et',
@@ -199,7 +207,7 @@ class _WorkspaceHomeScreenState extends ConsumerState<WorkspaceHomeScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    '� Takip Panosu',
+                    '📋 Takip Panosu',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -218,7 +226,7 @@ class _WorkspaceHomeScreenState extends ConsumerState<WorkspaceHomeScreen> {
                   ElevatedButton.icon(
                     onPressed: () => context.go('/workspace/${widget.workspaceId}/board'),
                     icon: const Icon(Icons.dashboard),
-                    label: const Text('Board\'u Aç'),
+                    label: const Text('Panoyu Aç'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,
@@ -291,6 +299,7 @@ class _WorkspaceHomeScreenState extends ConsumerState<WorkspaceHomeScreen> {
                       ..._members!.map(
                         (member) => _MemberTile(
                           member: member,
+                          workspaceId: widget.workspaceId,
                           isCurrentUser:
                               member.userId ==
                               ref.read(authServiceProvider).currentUserId,
@@ -344,27 +353,82 @@ class _InfoRow extends StatelessWidget {
 
 class _MemberTile extends ConsumerWidget {
   final Membership member;
+  final String workspaceId;
   final bool isCurrentUser;
 
   const _MemberTile({
     required this.member,
+    required this.workspaceId,
     required this.isCurrentUser,
   });
 
+  Color _getStatusColor(PresenceStatus status) {
+    switch (status) {
+      case PresenceStatus.idle:
+        return AppColors.presenceIdle;
+      case PresenceStatus.active:
+        return AppColors.presenceActive;
+      case PresenceStatus.busy:
+        return AppColors.presenceBusy;
+      case PresenceStatus.away:
+        return AppColors.presenceAway;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userRepo = ref.read(userRepositoryProvider);
+    final userAsync = ref.watch(userStreamProvider(member.userId));
+    
+    // For current user, watch notifier directly for immediate updates
+    // For other users, watch stream
+    Presence? presence;
+    if (isCurrentUser) {
+      final notifierState = ref.watch(presenceNotifierProvider(workspaceId));
+      presence = notifierState.currentPresence;
+      // Fallback to stream if notifier hasn't loaded
+      presence ??= ref.watch(userPresenceProvider((
+        workspaceId: workspaceId,
+        userId: member.userId,
+      )));
+    } else {
+      presence = ref.watch(userPresenceProvider((
+        workspaceId: workspaceId,
+        userId: member.userId,
+      )));
+    }
 
-    return FutureBuilder(
-      future: userRepo.getUser(member.userId),
-      builder: (context, snapshot) {
-        final user = snapshot.data;
-        final displayName = user?.displayName ?? 'Kullanıcı';
+    return userAsync.when(
+      data: (user) {
+        final displayName = user?.displayName ?? 'Bilinmeyen Kullanıcı';
+        final colorScheme = Theme.of(context).colorScheme;
 
         return ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: CircleAvatar(
-            child: Text(displayName[0].toUpperCase()),
+          leading: Stack(
+            children: [
+              CircleAvatar(
+                child: Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : '?'),
+              ),
+              // Presence indicator
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: presence != null
+                        ? _getStatusColor(presence.status)
+                        : colorScheme.outline,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colorScheme.surface,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           title: Row(
             children: [
@@ -382,7 +446,11 @@ class _MemberTile extends ConsumerWidget {
                 ),
             ],
           ),
-          subtitle: Text(member.role.value),
+          subtitle: Text(
+            presence != null
+                ? '${presence.status.displayName}${presence.hasMessage ? " - ${presence.message}" : ""}'
+                : member.role.value,
+          ),
           trailing: member.isOwner
               ? const Chip(
                   label: Text('Owner'),
@@ -391,6 +459,25 @@ class _MemberTile extends ConsumerWidget {
               : null,
         );
       },
+      loading: () => ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+          child: const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+        title: const Text('Yükleniyor...'),
+        subtitle: Text(member.role.value),
+      ),
+      error: (_, __) => ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const CircleAvatar(child: Text('?')),
+        title: const Text('Kullanıcı bulunamadı'),
+        subtitle: Text(member.role.value),
+      ),
     );
   }
 }

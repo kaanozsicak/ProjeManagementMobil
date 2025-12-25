@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../repositories/repositories.dart';
+import '../../shared/theme/app_colors.dart';
 import '../../shared/widgets/widgets.dart';
 
 /// Activity log screen - shows recent activities
@@ -28,6 +29,12 @@ class ActivityLogScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Son Hareketler'),
         actions: [
+          // Presence status indicator
+          PresenceIndicatorWidget(
+            workspaceId: workspaceId,
+            showLabel: true,
+          ),
+          const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Yenile',
@@ -43,7 +50,7 @@ class ActivityLogScreen extends ConsumerWidget {
             return const EmptyStateWidget(
               icon: Icons.history,
               title: 'Henüz aktivite yok',
-              subtitle: 'İlk item\'ı ekleyince burası dolmaya başlayacak.',
+              subtitle: 'İlk görevi ekleyince burası dolmaya başlayacak.',
             );
           }
 
@@ -188,7 +195,7 @@ class _ActivityTile extends StatelessWidget {
         return Colors.amber;
       case ActivityAction.contentEdited:
       case ActivityAction.updated:
-        return Colors.grey;
+        return AppColors.stateTodo;
     }
   }
 

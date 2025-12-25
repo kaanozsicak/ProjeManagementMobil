@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/models.dart';
 import '../../../providers/providers.dart';
+import '../../../shared/theme/app_colors.dart';
 
 /// Widget for updating user's presence status
 class PresenceStatusWidget extends ConsumerWidget {
@@ -33,7 +34,7 @@ class PresenceStatusWidget extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: myPresence != null
                       ? _getStatusColor(myPresence.status)
-                      : Colors.grey,
+                      : AppColors.presenceIdle,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -47,14 +48,16 @@ class PresenceStatusWidget extends ConsumerWidget {
                     Text(
                       myPresence?.status.displayName ?? 'Durumunu Ayarla',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     if (myPresence?.hasMessage == true)
                       Text(
                         myPresence!.message!,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.outline,
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w400,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -67,7 +70,7 @@ class PresenceStatusWidget extends ConsumerWidget {
               Icon(
                 Icons.edit_outlined,
                 size: 18,
-                color: theme.colorScheme.outline,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ],
           ),
@@ -94,13 +97,13 @@ class PresenceStatusWidget extends ConsumerWidget {
   Color _getStatusColor(PresenceStatus status) {
     switch (status) {
       case PresenceStatus.idle:
-        return Colors.green;
+        return AppColors.presenceIdle;
       case PresenceStatus.active:
-        return Colors.blue;
+        return AppColors.presenceActive;
       case PresenceStatus.busy:
-        return Colors.red;
+        return AppColors.presenceBusy;
       case PresenceStatus.away:
-        return Colors.amber;
+        return AppColors.presenceAway;
     }
   }
 }
@@ -209,7 +212,15 @@ class _StatusEditSheetState extends ConsumerState<_StatusEditSheet> {
                 final isSelected = status == _selectedStatus;
                 return ChoiceChip(
                   selected: isSelected,
-                  label: Text('${status.emoji} ${status.displayName}'),
+                  avatar: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(status),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  label: Text(status.displayName),
                   onSelected: (selected) {
                     if (selected) {
                       setState(() => _selectedStatus = status);
@@ -287,6 +298,19 @@ class _StatusEditSheetState extends ConsumerState<_StatusEditSheet> {
         ),
       ),
     );
+  }
+
+  Color _getStatusColor(PresenceStatus status) {
+    switch (status) {
+      case PresenceStatus.idle:
+        return AppColors.presenceIdle;
+      case PresenceStatus.active:
+        return AppColors.presenceActive;
+      case PresenceStatus.busy:
+        return AppColors.presenceBusy;
+      case PresenceStatus.away:
+        return AppColors.presenceAway;
+    }
   }
 }
 

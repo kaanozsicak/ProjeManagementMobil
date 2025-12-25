@@ -154,6 +154,15 @@ class WorkspaceRepository {
         .toList();
   }
 
+  /// Stream all members of a workspace (real-time)
+  Stream<List<Membership>> watchWorkspaceMembers(String workspaceId) {
+    return _membersCollection(workspaceId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Membership.fromFirestore(doc, workspaceId))
+            .toList());
+  }
+
   /// Add a member to workspace
   Future<Membership> addMember({
     required String workspaceId,

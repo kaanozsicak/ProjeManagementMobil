@@ -42,6 +42,12 @@ final currentUserStreamProvider = StreamProvider<AppUser?>((ref) {
   return ref.watch(authServiceProvider).watchCurrentUserProfile();
 });
 
+// User data provider by userId (cached stream)
+final userStreamProvider = StreamProvider.family<AppUser?, String>((ref, userId) {
+  final userRepo = ref.watch(userRepositoryProvider);
+  return userRepo.watchUser(userId);
+});
+
 // Auth state notifier for login/logout actions
 final authStateProvider =
     StateNotifierProvider<AuthStateNotifier, AuthState>((ref) {
@@ -58,6 +64,8 @@ class AuthState {
     this.error,
     this.user,
   });
+
+  bool get isAuthenticated => user != null;
 
   AuthState copyWith({
     bool? isLoading,
@@ -86,6 +94,15 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Refresh user state from Firestore
+  Future<void> refreshUser() async {
+    if (_authService.isSignedIn) {
+      final user = await _authService.getCurrentUserProfile();
+      state = state.copyWith(user: user);
+    }
+  }
+
+  /// Legacy method - kept for backward compatibility
   Future<bool> signInWithUsername(String displayName) async {
     state = state.copyWith(isLoading: true, error: null);
 
@@ -100,6 +117,67 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
       );
       return false;
     }
+  }
+
+  /// Sign in with email and password
+  Future<AuthResult> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    final (result, user) = await _authService.signInWithEmail(
+      email: email,
+      password: password,
+    );
+
+    if (result == AuthResult.success && user != null) {
+      state = AuthState(user: user);
+    } else {
+      state = state.copyWith(isLoading: false, error: result.message);
+    }
+
+    return result;
+  }
+
+  /// Register with email and password
+  Future<AuthResult> registerWithEmail({
+    required String email,
+    required String password,
+    required String displayName,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    final (result, user) = await _authService.registerWithEmail(
+      email: email,
+      password: password,
+      displayName: displayName,
+    );
+
+    if (result == AuthResult.success && user != null) {
+      state = AuthState(user: user);
+    } else {
+      state = state.copyWith(isLoading: false, error: result.message);
+    }
+
+    return result;
+  }
+
+  /// Sign in with Google
+  Future<AuthResult> signInWithGoogle() async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    final (result, user) = await _authService.signInWithGoogle();
+
+    if (result == AuthResult.success && user != null) {
+      state = AuthState(user: user);
+    } else if (result != AuthResult.cancelled) {
+      state = state.copyWith(isLoading: false, error: result.message);
+    } else {
+      state = state.copyWith(isLoading: false);
+    }
+
+    return result;
   }
 
   Future<void> signOut() async {

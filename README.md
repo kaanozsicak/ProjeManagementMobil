@@ -147,13 +147,35 @@ flutter run -d ios
 
 <div align="center">
 
-| Workspace Listesi | Görev Panosu | Aktivite Logu |
-|:-----------------:|:------------:|:-------------:|
-| *Çalışma alanlarınız* | *Keep-tarzı görev kartları* | *Gerçek zamanlı aktiviteler* |
+### Ana Ekranlar
 
-| Görev Detayı | Durum Güncelleme | Fikir Kutusu |
-|:------------:|:----------------:|:------------:|
-| *Detaylı görev görünümü* | *Presence sistemi* | *Hızlı fikir-görev dönüşümü* |
+| Workspace Listesi | Aktivite Logu | Presence |
+|:-----------------:|:-------------:|:--------:|
+| ![Workspace](screenshots/workspace_list.png) | ![Activity](screenshots/activity.png) | ![Presence](screenshots/presence.png) |
+| *Çalışma alanlarınız* | *Gerçek zamanlı aktiviteler* | *Takım durumları* |
+
+### Görev Panosu (Kanban)
+
+| Yapılacak | Yapılıyor | Tamamlandı | Genel Görünüm |
+|:---------:|:---------:|:----------:|:-------------:|
+| ![Board1](screenshots/board.png) | ![Board2](screenshots/board2.png) | ![Board3](screenshots/board3.png) | ![Board4](screenshots/board4.png) |
+| *Bekleyen görevler* | *Aktif çalışmalar* | *Bitenler* | *Keep-tarzı kartlar* |
+
+### Detay Ekranları
+
+| Görev Ekleme | Görev Detayı |
+|:------------:|:------------:|
+| ![Create](screenshots/item_create.png) | ![Detail](screenshots/item_detail.png) |
+| *Modern bottom sheet* | *View/Edit modu* |
+
+### Dark Mode 🌙
+
+| Ekran 1 | Ekran 2 |
+|:-------:|:-------:|
+| ![Dark1](screenshots/dark_mode1.png) | ![Dark2](screenshots/dark_mode2.png) |
+| *Göz yormayan koyu tema* | *Gece çalışması için ideal* |
+
+> 💡 Yukarıdaki tüm ekran görüntüleri Light Mode'da çekilmiştir.
 
 </div>
 
@@ -192,14 +214,27 @@ lib/
 │   ├── presence_providers.dart
 │   └── activity_providers.dart
 │
+├── 🎨 shared/                   # Paylaşılan bileşenler
+│   ├── theme/                   # Design System
+│   │   ├── app_theme.dart       # M3 Light/Dark themes
+│   │   ├── app_colors.dart      # Semantic color palette
+│   │   ├── app_spacing.dart     # Spacing scale
+│   │   └── app_motion.dart      # Animation constants
+│   └── widgets/                 # Ortak widgetlar
+│       ├── gradient_widgets.dart
+│       ├── skeleton_widgets.dart
+│       └── presence_indicator_widget.dart
+│
 └── 🖼 ui/                       # Ekranlar
     ├── onboarding/
     ├── workspace_list/
+    ├── workspace_home/
     ├── board/
     │   └── widgets/
     │       ├── board_section_widget.dart
-    │       ├── item_card.dart
-    │       ├── item_detail_dialog.dart
+    │       ├── animated_item_card.dart
+    │       ├── item_create_sheet.dart
+    │       ├── item_edit_sheet.dart
     │       └── active_users_section.dart
     └── activity/
 ```
@@ -230,8 +265,8 @@ lib/
 - [x] **Phase 3**: Presence ve "Active/Şu Anda Kimde?"
 - [x] **Phase 4**: Aktivite Log'u ve Basit Bildirim
 - [x] **Phase 5**: Fikir Kutusu → Görevleştir
-- [ ] **Phase 6**: Gelişmiş Özellikler (Takvim, Hatırlatıcı)
-- [ ] **Phase 7**: UI/UX İyileştirmeler
+- [x] **Phase 6**: UI/UX Modernization (Design System, Animations)
+- [ ] **Phase 7**: Gelişmiş Özellikler (Takvim, Hatırlatıcı, Webhook)
 
 ---
 

@@ -21,9 +21,9 @@ enum ItemType {
       case ItemType.activeTask:
         return 'Aktif Görev';
       case ItemType.bug:
-        return 'Bug & Veri';
+        return 'Hata & Veri';
       case ItemType.logic:
-        return 'Logic & Refactoring';
+        return 'Geliştirme';
       case ItemType.idea:
         return 'Fikir';
     }

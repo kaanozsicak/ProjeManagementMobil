@@ -141,7 +141,7 @@ final notificationNotifierProvider =
 final notificationInitializerProvider = FutureProvider<void>((ref) async {
   final authState = ref.watch(authStateProvider);
   
-  if (authState.isAuthenticated) {
+  if (authState.user != null) {
     final notifier = ref.read(notificationNotifierProvider.notifier);
     await notifier.initialize();
   }

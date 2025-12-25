@@ -142,7 +142,7 @@ class ItemActivity {
   /// Get a human-readable description of the activity
   String getDescription({String? targetName}) {
     final actor = actorName;
-    final item = itemTitle ?? 'bir item';
+    final item = itemTitle ?? 'bir görev';
 
     switch (action) {
       case ActivityAction.created:
@@ -153,7 +153,7 @@ class ItemActivity {
         return '$actor "$item" sildi';
       case ActivityAction.assigned:
         final assignee = targetName ?? payload?['assigneeName'] ?? 'birine';
-        return '$actor "$item" öğesini $assignee atadı';
+        return '$actor "$item" görevini $assignee atadı';
       case ActivityAction.unassigned:
         return '$actor "$item" atamasını kaldırdı';
       case ActivityAction.stateChanged:
@@ -175,7 +175,7 @@ class ItemActivity {
 
   /// Get short description for compact views
   String get shortDescription {
-    final item = itemTitle ?? 'Item';
+    final item = itemTitle ?? 'Görev';
     return '${action.emoji} $item ${action.displayName.toLowerCase()}';
   }
 

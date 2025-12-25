@@ -18,9 +18,9 @@ class Workspace {
     final data = doc.data()!;
     return Workspace(
       id: doc.id,
-      name: data['name'] as String,
-      createdBy: data['createdBy'] as String,
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      name: data['name'] as String? ?? 'Unnamed',
+      createdBy: data['createdBy'] as String? ?? data['ownerId'] as String? ?? '',
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
