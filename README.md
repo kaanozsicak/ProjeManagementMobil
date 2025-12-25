@@ -156,10 +156,10 @@ flutter run -d ios
 
 ### Görev Panosu (Kanban)
 
-| Yapılacak | Yapılıyor | Tamamlandı | Genel Görünüm |
-|:---------:|:---------:|:----------:|:-------------:|
+| Şu Anda Kimde? | Active Görevler | Bug & Logic | Fikir Kutusu |
+|:--------------:|:---------------:|:-----------:|:------------:|
 | ![Board1](screenshots/board.png) | ![Board2](screenshots/board2.png) | ![Board3](screenshots/board3.png) | ![Board4](screenshots/board4.png) |
-| *Bekleyen görevler* | *Aktif çalışmalar* | *Bitenler* | *Keep-tarzı kartlar* |
+| *Takım durumları ve işler* | *Aktif çalışmalar* | *Hatalar ve refactoring* | *Fikirler ve görevleştirme* |
 
 ### Detay Ekranları
 
